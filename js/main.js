@@ -1,15 +1,18 @@
 class Button {
-  constructor(name, value) {
+  constructor(name, value, parent=null) {
     this.name = name
     this.value = value
+    this.parent = parent
   }
 
   draw() {
-    document.querySelector('#interface').innerHTML += `<a href="#" class="button" id="${this.name}">${this.value}</a>`;
+    return new Promise(resolve => {
+      resolve(document.querySelector('#interface').innerHTML += `<a href="#" class="button" id="${this.name}">${this.value}</a>`)
+    })
   }
 
   giveEventListener() {
-    document.querySelector(`#${this.name}`).addEventListener('click', handlePress)
+    document.querySelector(`#${this.name}`).addEventListener('click', (e) => this.parent.addToEquation(e.target.innerText))
   }
 }
 
@@ -22,30 +25,29 @@ class Calculator {
     this.#equation = []
     this.#reset = true
     this.#buttons = [
-      new Button('seven', 7),
-      new Button('eight', 8),
-      new Button('nine', 9),
-      new Button('divide', '/'),
-      new Button('four', 4),
-      new Button('five', 5),
-      new Button('six', 6),
-      new Button('multiply', 'x'),
-      new Button('one', 1),
-      new Button('two', 2),
-      new Button('three', 3),
-      new Button('add', '+'),
-      new Button('zero', 0),
-      new Button('point', '.'),
-      new Button('equals', '='),
-      new Button('subtract', '-')
+      new Button('seven', 7, this),
+      new Button('eight', 8, this),
+      new Button('nine', 9, this),
+      new Button('divide', '/', this),
+      new Button('four', 4, this),
+      new Button('five', 5, this),
+      new Button('six', 6, this),
+      new Button('multiply', 'x', this),
+      new Button('one', 1, this),
+      new Button('two', 2, this),
+      new Button('three', 3, this),
+      new Button('add', '+', this),
+      new Button('zero', 0, this),
+      new Button('point', '.', this),
+      new Button('equals', '=', this),
+      new Button('subtract', '-', this)
     ]
 
     this.#buttons.forEach(b => {
-      b.draw()  
-    })
-    
-    this.#buttons.forEach(b => {
-      b.giveEventListener()
+      b.draw()
+      .then(res => {
+        b.giveEventListener()
+      })  
     })
   }
 
@@ -53,7 +55,7 @@ class Calculator {
     //equation must be of odd length and alternate num, op
     let valid = this.#equation.length % 2 !== 0 && this.#equation.reduce((flag, c, i) => i % 2 === 0? flag && !isNaN(Number(c)): flag && /[+x/-]/.test(c), true) 
     if (!valid) { 
-      this.#reset()
+      this.reset = true
       this.#equation = ['Invalid expression']
       return
     }
@@ -79,6 +81,7 @@ class Calculator {
   
     //end of current calculation
     this.#reset = true
+    this.display()
   }
 
   addToEquation(value) {
@@ -104,6 +107,11 @@ class Calculator {
         }
         break;
     }
+    this.display()
+  }
+
+  display() {
+    document.querySelector('#display').innerText = calc.getEquationString()
   }
 
   getEquationString() {
@@ -112,13 +120,5 @@ class Calculator {
 }
 
 let calc = new Calculator()
-
-function handlePress(event) {
-  let value = event.target.innerText 
-  calc.addToEquation(value)
-
-  //display
-  document.querySelector('#display').innerText = calc.getEquationString()
-}
 
 
